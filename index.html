@@ -72,6 +72,25 @@ gmp-place-autocomplete{display:block;width:100%;min-width:0;--gmpx-color-surface
 .distance-status{display:none;width:100%;font-size:12px;color:#687080;margin:0 0 12px;line-height:1.4}.distance-status.visible{display:block}.distance-status.error{color:#b42318}
 .field:has(.maps-autocomplete){align-items:center;background:#f1f1f3;border:1px solid #e3e3e7;padding-left:clamp(18px,4.2vw,34px);gap:clamp(12px,3vw,22px)}.field:has(.maps-autocomplete) .maps-autocomplete{overflow:visible;display:flex;align-items:center;min-width:0;flex:1}.field:has(.maps-autocomplete) gmp-place-autocomplete{display:block;width:100%;min-height:54px;border:0!important;background-color:transparent!important;border-radius:999px!important;box-shadow:none!important;color:#333;color-scheme:light;font-family:Arial,Helvetica,sans-serif;font-size:clamp(17px,4vw,28px);line-height:1.2}
 
+
+/* Mobile fixes: clear date/time controls and stable inline Places suggestions */
+.date-time-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;margin-bottom:12px}
+.date-time-grid .field{margin:0;min-width:0;height:64px;padding:8px 12px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:4px;border-radius:18px}
+.date-time-label{font-size:12px;line-height:1.1;font-weight:700;color:#555;white-space:nowrap}
+.date-time-grid input[type="date"],.date-time-grid input[type="time"]{display:block;width:100%;min-width:0;max-width:100%;font-size:15px;line-height:1.2;color:#222;background:transparent;border:0;outline:0;appearance:auto;-webkit-appearance:auto}
+.location-field input[type="text"]{width:100%;min-width:0;flex:1;font-size:clamp(17px,4vw,28px);padding:0;background:transparent}
+.location-field input[type="hidden"]{display:none}
+.location-wrap{position:relative;width:100%;z-index:2}
+.location-wrap:focus-within{z-index:50}
+.place-suggestions{position:absolute;left:8px;right:8px;top:calc(100% - 8px);z-index:99999;background:#fff;border:1px solid #ddd;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.18);overflow:hidden;max-height:260px;overflow-y:auto}
+.place-suggestions[hidden]{display:none}
+.place-suggestion{display:block;width:100%;border:0;border-bottom:1px solid #eee;background:#fff;text-align:left;padding:13px 14px;color:#222;font:14px/1.35 Arial,Helvetica,sans-serif;cursor:pointer}
+.place-suggestion:last-child{border-bottom:0}
+.place-suggestion:active{background:#fff4cc}
+.return-date{display:none}
+.return-date.show{display:grid}
+@media(max-width:360px){.date-time-grid{gap:7px}.date-time-grid .field{padding:7px 9px;height:60px}.date-time-label{font-size:11px}.date-time-grid input[type="date"],.date-time-grid input[type="time"]{font-size:13px}}
+
 </style>
 </head>
 <body>
@@ -100,24 +119,43 @@ gmp-place-autocomplete{display:block;width:100%;min-width:0;--gmpx-color-surface
   </div>
 
   <form id="bookingForm">
-    <label class="field">
-      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M2 12 22 2 15 22l-3-8-10-2z"/></svg>
-      <input id="pickup" name="pickup" type="hidden"><div class="maps-autocomplete" id="pickupAutocomplete"></div>
-    </label>
-    <label class="field">
-      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a8 8 0 0 0-8 8c0 6 8 12 8 12s8-6 8-12a8 8 0 0 0-8-8zm0 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></svg>
-      <input id="drop" name="drop" type="hidden"><div class="maps-autocomplete" id="dropAutocomplete"></div>
-    </label>
-    <label class="field date-time">
-      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 2h2v3h6V2h2v3h3v17H4V5h3V2zm12 7H5v11h14V9zM7 11h3v3H7zm5 0h3v3h-3zm5 0h2v3h-2z"/></svg>
-      <input type="datetime-local" id="pickupDate" name="pickupDate" aria-label="Pickup date and time" required>
-      <span class="date-hint" id="pickupHint">Pickup date &amp; time</span>
-    </label>
-    <label class="field date-time return-date" id="returnWrap">
-      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 2h2v3h6V2h2v3h3v17H4V5h3V2zm12 7H5v11h14V9zM7 11h3v3H7zm5 0h3v3h-3z"/></svg>
-      <input type="datetime-local" id="returnDate" name="returnDate" aria-label="Return date">
-      <span class="date-hint">Return date &amp; time</span>
-    </label>
+    <div class="location-wrap">
+      <div class="field location-field">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M2 12 22 2 15 22l-3-8-10-2z"/></svg>
+        <input id="pickupInput" type="text" placeholder="Enter pickup city" autocomplete="off" autocapitalize="words" aria-label="Pickup location" required>
+        <input id="pickup" name="pickup" type="hidden">
+      </div>
+      <div class="place-suggestions" id="pickupSuggestions" hidden></div>
+    </div>
+    <div class="location-wrap">
+      <div class="field location-field">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a8 8 0 0 0-8 8c0 6 8 12 8 12s8-6 8-12a8 8 0 0 0-8-8zm0 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></svg>
+        <input id="dropInput" type="text" placeholder="Enter destination city" autocomplete="off" autocapitalize="words" aria-label="Drop location" required>
+        <input id="drop" name="drop" type="hidden">
+      </div>
+      <div class="place-suggestions" id="dropSuggestions" hidden></div>
+    </div>
+
+    <div class="date-time-grid">
+      <label class="field date-time">
+        <span class="date-time-label">Pickup Date</span>
+        <input type="date" id="pickupDate" name="pickupDate" aria-label="Pickup date" required>
+      </label>
+      <label class="field date-time">
+        <span class="date-time-label">Pickup Time</span>
+        <input type="time" id="pickupTime" name="pickupTime" aria-label="Pickup time" required>
+      </label>
+    </div>
+    <div class="date-time-grid return-date" id="returnWrap">
+      <label class="field date-time">
+        <span class="date-time-label">Return Date</span>
+        <input type="date" id="returnDate" name="returnDate" aria-label="Return date">
+      </label>
+      <label class="field date-time">
+        <span class="date-time-label">Return Time</span>
+        <input type="time" id="returnTime" name="returnTime" aria-label="Return time">
+      </label>
+    </div>
     <label class="field">
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Zm0 2c-4.2 0-7.5 2.1-7.5 4.7V21h15v-2.3c0-2.6-3.3-4.7-7.5-4.7Z"/></svg>
       <input id="customerName" name="customerName" type="text" autocomplete="name" placeholder="Enter your name" required>
@@ -836,7 +874,9 @@ const oneBtn=document.getElementById('onewayBtn');
 const roundBtn=document.getElementById('roundBtn');
 const returnWrap=document.getElementById('returnWrap');
 const returnDate=document.getElementById('returnDate');
+const returnTime=document.getElementById('returnTime');
 const pickupDate=document.getElementById('pickupDate');
+const pickupTime=document.getElementById('pickupTime');
 
 function setTrip(round){
   oneBtn.classList.toggle('active',!round);
@@ -845,16 +885,10 @@ function setTrip(round){
   roundBtn.setAttribute('aria-pressed',String(round));
   returnWrap.classList.toggle('show',round);
   returnDate.required=round;
+  returnTime.required=round;
   returnDate.disabled=!round;
+  returnTime.disabled=!round;
 }
-function syncDateInput(input){
-  input.classList.toggle('has-value',Boolean(input.value));
-}
-[pickupDate,returnDate].forEach(input=>{
-  syncDateInput(input);
-  input.addEventListener('input',()=>syncDateInput(input));
-  input.addEventListener('change',()=>syncDateInput(input));
-});
 oneBtn.addEventListener('click',()=>setTrip(false));
 roundBtn.addEventListener('click',()=>setTrip(true));
 setTrip(false);
@@ -871,49 +905,96 @@ function setDistanceStatus(message, isError=false){
 
 async function setupGooglePlaces(){
   try{
-    const {PlaceAutocompleteElement}=await google.maps.importLibrary('places');
-    const setup=(hostId,hiddenId,placeholder,onSelected)=>{
-      const host=document.getElementById(hostId);
+    const {AutocompleteSuggestion, AutocompleteSessionToken}=await google.maps.importLibrary('places');
+
+    function attachAutocomplete(inputId, hiddenId, listId, onSelected){
+      const input=document.getElementById(inputId);
       const hidden=document.getElementById(hiddenId);
-      const widget=new PlaceAutocompleteElement({includedRegionCodes:['in']});
-      // Keep Google's live suggestions, but make its input blend into the existing grey pill.
-      widget.placeholder=placeholder;
-      widget.setAttribute('placeholder',placeholder);
-      widget.setAttribute('no-input-icon','');
-      widget.setAttribute('aria-label',placeholder);
-      widget.style.width='100%';
-      widget.style.display='block';
-      widget.style.border='0';
-      widget.style.backgroundColor='transparent';
-      widget.style.borderRadius='999px';
-      widget.style.color='#333';
-      widget.style.colorScheme='light';
-      widget.style.fontFamily='Arial, Helvetica, sans-serif';
-      widget.style.fontSize='clamp(17px, 4vw, 28px)';
-      host.appendChild(widget);
-      widget.addEventListener('gmp-select',async(event)=>{
-        try{
-          const place=event.placePrediction.toPlace();
-          await place.fetchFields({fields:['id','formattedAddress','displayName']});
-          hidden.value=place.formattedAddress || place.displayName || '';
-          onSelected(place.id,hidden.value);
-        }catch(err){
-          hidden.value='';onSelected(null,'');
-          setDistanceStatus('Could not read the selected location. Please select it again.',true);
-        }
+      const list=document.getElementById(listId);
+      let sessionToken=new AutocompleteSessionToken();
+      let requestNumber=0;
+      let debounceHandle=null;
+
+      function closeList(){ list.hidden=true; list.replaceChildren(); }
+      function clearSelection(){
+        hidden.value='';
+        onSelected(null);
+      }
+
+      input.addEventListener('input',()=>{
+        clearSelection();
+        const typed=input.value.trim();
+        const thisRequest=++requestNumber;
+        if(debounceHandle) clearTimeout(debounceHandle);
+        if(typed.length<2){ closeList(); return; }
+
+        debounceHandle=setTimeout(async()=>{
+          try{
+            const {suggestions=[]}=await AutocompleteSuggestion.fetchAutocompleteSuggestions({
+              input:typed,
+              includedRegionCodes:['in'],
+              sessionToken
+            });
+            if(thisRequest!==requestNumber || input.value.trim()!==typed) return;
+            list.replaceChildren();
+
+            suggestions.forEach(({placePrediction})=>{
+              if(!placePrediction) return;
+              const button=document.createElement('button');
+              button.type='button';
+              button.className='place-suggestion';
+              button.textContent=placePrediction.text.text;
+              button.addEventListener('click',async()=>{
+                try{
+                  const place=placePrediction.toPlace();
+                  await place.fetchFields({fields:['id','formattedAddress','displayName','location']});
+                  const address=place.formattedAddress || place.displayName || placePrediction.text.text;
+                  input.value=address;
+                  hidden.value=address;
+                  onSelected(place.id);
+                  closeList();
+                  sessionToken=new AutocompleteSessionToken();
+                }catch(error){
+                  closeList();
+                  setDistanceStatus('Could not load the selected place. Please select it again.',true);
+                }
+              });
+              list.appendChild(button);
+            });
+
+            if(suggestions.length){ list.hidden=false; }
+            else { closeList(); }
+          }catch(error){
+            console.error('Place suggestions failed:',error);
+            closeList();
+            setDistanceStatus('Google location search failed. Check that Places API (New) is enabled.',true);
+          }
+        },250);
       });
-      return widget;
-    };
-    setup('pickupAutocomplete','pickup','Enter pickup city',(id)=>{pickupPlaceId=id;setDistanceStatus('Pickup selected. Now select your destination.');});
-    setup('dropAutocomplete','drop','Enter destination city',(id)=>{dropPlaceId=id;setDistanceStatus('Destination selected. Road distance will be calculated when you continue.');});
+
+      input.addEventListener('focus',()=>{
+        if(input.value.trim().length>=2 && list.childElementCount) list.hidden=false;
+      });
+      document.addEventListener('click',(event)=>{
+        if(!list.contains(event.target) && event.target!==input) closeList();
+      });
+    }
+
+    attachAutocomplete('pickupInput','pickup','pickupSuggestions',(id)=>{
+      pickupPlaceId=id;
+      if(id) setDistanceStatus('Pickup selected. Now select your destination.');
+    });
+    attachAutocomplete('dropInput','drop','dropSuggestions',(id)=>{
+      dropPlaceId=id;
+      if(id) setDistanceStatus('Destination selected. Road distance will be calculated when you continue.');
+    });
     mapsReady=true;
   }catch(err){
     console.error('Google Maps setup error:',err);
-    mapsInitError='Google Maps could not load. Check API key, billing and enabled APIs.';
+    mapsInitError='Google Maps could not load. Check API key, billing and Places API (New) access.';
     setDistanceStatus(mapsInitError,true);
   }
 }
-
 async function getDrivingDistanceKm(){
   if(!pickupPlaceId || !dropPlaceId) throw new Error('Please select both pickup and destination from the Google suggestions.');
   const {Place}=await google.maps.importLibrary('places');
@@ -943,8 +1024,8 @@ document.getElementById('bookingForm').addEventListener('submit',async e=>{
   try{
     const route=await getDrivingDistanceKm();
     const roundTrip=roundBtn.classList.contains('active');
-    const pickupDateValue=pickupDate.value;
-    const returnValue=returnDate.value;
+    const pickupDateValue=pickupDate.value && pickupTime.value ? pickupDate.value+'T'+pickupTime.value : '';
+    const returnValue=returnDate.value && returnTime.value ? returnDate.value+'T'+returnTime.value : '';
     const trip={
       pickup:document.getElementById('pickup').value.trim(),
       drop:document.getElementById('drop').value.trim(),
