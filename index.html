@@ -64,6 +64,14 @@ body{min-height:100vh}
 .contact.call { color: #111 !important; }
 .contact.wa { color: #111 !important; }
 
+
+/* Google Maps Places (New) autocomplete styling */
+.maps-autocomplete{width:100%;min-width:0;flex:1}
+gmp-place-autocomplete{display:block;width:100%;min-width:0;--gmpx-color-surface:#f1f1f3;--gmpx-color-on-surface:#333;--gmpx-color-outline:transparent;--gmpx-color-outline-variant:transparent;--gmpx-color-primary:#111;--gmpx-font-family:Arial,Helvetica,sans-serif;--gmpx-font-size:clamp(17px,4vw,28px);--gmpx-border-radius:999px}
+.maps-autocomplete gmp-place-autocomplete{width:100%}
+.distance-status{display:none;width:100%;font-size:12px;color:#687080;margin:0 0 12px;line-height:1.4}.distance-status.visible{display:block}.distance-status.error{color:#b42318}
+.field:has(.maps-autocomplete){align-items:center;background:#f1f1f3;border:1px solid #e3e3e7;padding-left:clamp(18px,4.2vw,34px);gap:clamp(12px,3vw,22px)}.field:has(.maps-autocomplete) .maps-autocomplete{overflow:visible;display:flex;align-items:center;min-width:0;flex:1}.field:has(.maps-autocomplete) gmp-place-autocomplete{display:block;width:100%;min-height:54px;border:0!important;background-color:transparent!important;border-radius:999px!important;box-shadow:none!important;color:#333;color-scheme:light;font-family:Arial,Helvetica,sans-serif;font-size:clamp(17px,4vw,28px);line-height:1.2}
+
 </style>
 </head>
 <body>
@@ -94,11 +102,11 @@ body{min-height:100vh}
   <form id="bookingForm">
     <label class="field">
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M2 12 22 2 15 22l-3-8-10-2z"/></svg>
-      <input id="pickup" name="pickup" placeholder="Enter pickup city" required>
+      <input id="pickup" name="pickup" type="hidden"><div class="maps-autocomplete" id="pickupAutocomplete"></div>
     </label>
     <label class="field">
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a8 8 0 0 0-8 8c0 6 8 12 8 12s8-6 8-12a8 8 0 0 0-8-8zm0 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></svg>
-      <input id="drop" name="drop" placeholder="Enter destination city" required>
+      <input id="drop" name="drop" type="hidden"><div class="maps-autocomplete" id="dropAutocomplete"></div>
     </label>
     <label class="field date-time">
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 2h2v3h6V2h2v3h3v17H4V5h3V2zm12 7H5v11h14V9zM7 11h3v3H7zm5 0h3v3h-3zm5 0h2v3h-2z"/></svg>
@@ -111,14 +119,8 @@ body{min-height:100vh}
       <span class="date-hint">Return date &amp; time</span>
     </label>
     <label class="field">
-      <span style="font-weight:800;font-size:14px;white-space:nowrap">KM</span>
-      <input id="distanceKm" name="distanceKm" type="number" min="1" step="1" inputmode="numeric" placeholder="Enter approximate distance (KM)" required>
-    </label>
-    <label class="field">
-      <svg class="ico" viewBox="0 0 64 64" aria-hidden="true"><path fill="currentColor" d="M12 24h40l5 12v16h-6v-5H19v5h-6V36l-1-12zm8-10h24l5 8H15l5-8zM18 35a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm28 0a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/></svg>
-      <select id="vehicle" name="vehicle" required>
-        <option value="" selected disabled>Select vehicle type</option><option>Sedan 4+1</option><option>SUV 6+1</option><option>SUV 7+1</option>
-      </select><span aria-hidden="true">⌄</span>
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Zm0 2c-4.2 0-7.5 2.1-7.5 4.7V21h15v-2.3c0-2.6-3.3-4.7-7.5-4.7Z"/></svg>
+      <input id="customerName" name="customerName" type="text" autocomplete="name" placeholder="Enter your name" required>
     </label>
     <label class="field mobile-field">
       <span class="country">+91</span>
@@ -130,6 +132,7 @@ body{min-height:100vh}
       <span>Check Price &amp; Book Cab</span>
     </button>
   </form>
+  <small id="distanceStatus" class="distance-status" role="status" aria-live="polite"></small>
 
 <!-- ==========================================
      ONEWAY TAXI 24x7 SEO CONTENT
@@ -823,6 +826,11 @@ body{min-height:100vh}
 
   <div class="fare-note"><div class="note-pill"><strong>No return fare</strong><small>One-way cab fare • No hidden charges</small></div></div>
 </main>
+
+<script>
+(g=>{var h,a,k,p="The Google Maps JavaScript API",c="google",l="importLibrary",q="__ib__",m=document,b=window;b=b[c]||(b[c]={});var d=b.maps||(b.maps={}),r=new Set,e=new URLSearchParams,u=()=>h||(h=new Promise(async(f,n)=>{await(a=m.createElement("script"));e.set("libraries",[...r]+"");for(k in g)e.set(k.replace(/[A-Z]/g,t=>"_"+t[0].toLowerCase()),g[k]);e.set("callback",c+".maps."+q);a.src=`https://maps.${c}apis.com/maps/api/js?`+e;d[q]=f;a.onerror=()=>h=n(Error(p+" could not load."));a.nonce=m.querySelector("script[nonce]")?.nonce||"";m.head.append(a)}));d[l]?console.warn(p+" only loads once. Ignoring:",g):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))})({key:"AIzaSyB79memjL-rc3k49TKKW8hauHoY1EUHrTM",v:"weekly"});
+</script>
+
 <script>
 const oneBtn=document.getElementById('onewayBtn');
 const roundBtn=document.getElementById('roundBtn');
@@ -851,28 +859,117 @@ oneBtn.addEventListener('click',()=>setTrip(false));
 roundBtn.addEventListener('click',()=>setTrip(true));
 setTrip(false);
 pickupDate.addEventListener('change',()=>{returnDate.min=pickupDate.value;});
-document.getElementById('bookingForm').addEventListener('submit',e=>{
+let pickupPlaceId = null;
+let dropPlaceId = null;
+let mapsReady = false;
+let mapsInitError = '';
+
+function setDistanceStatus(message, isError=false){
+  const el=document.getElementById('distanceStatus');
+  if(el){el.textContent=message;el.classList.toggle('visible',Boolean(message));el.classList.toggle('error',isError);}
+}
+
+async function setupGooglePlaces(){
+  try{
+    const {PlaceAutocompleteElement}=await google.maps.importLibrary('places');
+    const setup=(hostId,hiddenId,placeholder,onSelected)=>{
+      const host=document.getElementById(hostId);
+      const hidden=document.getElementById(hiddenId);
+      const widget=new PlaceAutocompleteElement({includedRegionCodes:['in']});
+      // Keep Google's live suggestions, but make its input blend into the existing grey pill.
+      widget.placeholder=placeholder;
+      widget.setAttribute('placeholder',placeholder);
+      widget.setAttribute('no-input-icon','');
+      widget.setAttribute('aria-label',placeholder);
+      widget.style.width='100%';
+      widget.style.display='block';
+      widget.style.border='0';
+      widget.style.backgroundColor='transparent';
+      widget.style.borderRadius='999px';
+      widget.style.color='#333';
+      widget.style.colorScheme='light';
+      widget.style.fontFamily='Arial, Helvetica, sans-serif';
+      widget.style.fontSize='clamp(17px, 4vw, 28px)';
+      host.appendChild(widget);
+      widget.addEventListener('gmp-select',async(event)=>{
+        try{
+          const place=event.placePrediction.toPlace();
+          await place.fetchFields({fields:['id','formattedAddress','displayName']});
+          hidden.value=place.formattedAddress || place.displayName || '';
+          onSelected(place.id,hidden.value);
+        }catch(err){
+          hidden.value='';onSelected(null,'');
+          setDistanceStatus('Could not read the selected location. Please select it again.',true);
+        }
+      });
+      return widget;
+    };
+    setup('pickupAutocomplete','pickup','Enter pickup city',(id)=>{pickupPlaceId=id;setDistanceStatus('Pickup selected. Now select your destination.');});
+    setup('dropAutocomplete','drop','Enter destination city',(id)=>{dropPlaceId=id;setDistanceStatus('Destination selected. Road distance will be calculated when you continue.');});
+    mapsReady=true;
+  }catch(err){
+    console.error('Google Maps setup error:',err);
+    mapsInitError='Google Maps could not load. Check API key, billing and enabled APIs.';
+    setDistanceStatus(mapsInitError,true);
+  }
+}
+
+async function getDrivingDistanceKm(){
+  if(!pickupPlaceId || !dropPlaceId) throw new Error('Please select both pickup and destination from the Google suggestions.');
+  const {Place}=await google.maps.importLibrary('places');
+  const {Route}=await google.maps.importLibrary('routes');
+  const origin=new Place({id:pickupPlaceId});
+  const destination=new Place({id:dropPlaceId});
+  const result=await Route.computeRoutes({
+    origin,destination,travelMode:'DRIVING',regionCode:'IN',
+    fields:['distanceMeters','durationMillis']
+  });
+  const route=result.routes && result.routes[0];
+  if(!route || !route.distanceMeters) throw new Error('No driving route was found for these locations.');
+  return {km:Math.ceil(route.distanceMeters/1000),durationMinutes:Math.round((route.durationMillis||0)/60000)};
+}
+
+document.getElementById('bookingForm').addEventListener('submit',async e=>{
   e.preventDefault();
   const form=e.currentTarget;
   if(!form.reportValidity()) return;
-  const roundTrip=roundBtn.classList.contains('active');
-  const pickupDateValue=pickupDate.value;
-  const returnValue=returnDate.value;
-  const trip={
-    pickup:document.getElementById('pickup').value.trim(),
-    drop:document.getElementById('drop').value.trim(),
-    tripType:roundTrip?'Round Trip':'Oneway',
-    date:pickupDateValue,
-    time:pickupDateValue ? new Date(pickupDateValue).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}) : '',
-    returnDate:returnValue,
-    distance:Number(document.getElementById('distanceKm').value),
-    days:roundTrip && returnValue ? Math.max(1,Math.ceil((new Date(returnValue)-new Date(pickupDateValue))/86400000)+1) : 1,
-    vehicle:document.getElementById('vehicle').value,
-    mobile:document.getElementById('mobile').value.trim()
-  };
-  sessionStorage.setItem('taxiTrip',JSON.stringify(trip));
-  window.location.href='fare-details.html';
+  if(!mapsReady){setDistanceStatus(mapsInitError || 'Google Maps is still loading. Please try again.',true);return;}
+  if(!pickupPlaceId || !dropPlaceId){setDistanceStatus('Please choose both pickup and destination from the Google Maps suggestion list.',true);return;}
+  const submitButton=form.querySelector('button[type="submit"]');
+  const originalButton=submitButton.innerHTML;
+  submitButton.disabled=true;
+  submitButton.innerHTML='<span>Calculating road distance…</span>';
+  setDistanceStatus('Calculating driving distance with Google Maps…');
+  try{
+    const route=await getDrivingDistanceKm();
+    const roundTrip=roundBtn.classList.contains('active');
+    const pickupDateValue=pickupDate.value;
+    const returnValue=returnDate.value;
+    const trip={
+      pickup:document.getElementById('pickup').value.trim(),
+      drop:document.getElementById('drop').value.trim(),
+      pickupPlaceId,dropPlaceId,
+      tripType:roundTrip?'Round Trip':'Oneway',
+      date:pickupDateValue,
+      time:pickupDateValue ? pickupDateValue.split('T')[1] || '' : '',
+      returnDate:returnValue,
+      distance:route.km,
+      durationMinutes:route.durationMinutes,
+      days:roundTrip && returnValue && pickupDateValue ? Math.max(1,Math.ceil((new Date(returnValue)-new Date(pickupDateValue))/86400000)+1) : 1,
+      name:document.getElementById('customerName').value.trim(),
+      mobile:document.getElementById('mobile').value.trim()
+    };
+    sessionStorage.setItem('taxiTrip',JSON.stringify(trip));
+    setDistanceStatus('');
+    window.location.href='fare-details.html';
+  }catch(err){
+    console.error('Route calculation failed:',err);
+    setDistanceStatus(err.message || 'Could not calculate road distance. Please check the locations and try again.',true);
+    submitButton.disabled=false;submitButton.innerHTML=originalButton;
+  }
 });
+
+setupGooglePlaces();
 </script>
 </body>
 </html>
